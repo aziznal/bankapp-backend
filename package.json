@@ -1,0 +1,14 @@
+{
+  "name": "bankapp-server",
+  "version": "1.0.0",
+  "description": "Backend for internship bank app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "aziznal",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
