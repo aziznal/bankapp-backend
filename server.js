@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require("express");
+const environment = require("./environment");
 
 // Constants
 const PORT = 8080;
@@ -11,7 +12,10 @@ const app = express();
 app.get("/", (req, res) => {
   res.send(
     `
-    <h1 style='text-align: center;'>Hello World!</h1>
+    <h1 style='text-align: center;'>
+      Hello World!
+      <h3 style='text-align: center;'>Database is hosted on ${environment.DATABASE_URL}</h3>
+    </h1>
     `
   );
 });
