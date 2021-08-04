@@ -1,11 +1,11 @@
 "use strict";
 
-const express = require("express");
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
-const mongodb = require("mongodb");
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import mongodb from "mongodb";
 
-const environment = require("./environment");
+import { DATABASE_URL } from "./environment";
 
 // Constants
 const PORT = 8080;
@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
     <h1 style='text-align: center;'>
       Hello World!
       <h3 style='text-align: center;'>
-        Database is hosted on ${environment.DATABASE_URL}
+        Database is hosted on ${DATABASE_URL}
       </h3>
     </h1>
     `
