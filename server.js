@@ -1,6 +1,10 @@
 "use strict";
 
 const express = require("express");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const mongodb = require("mongodb");
+
 const environment = require("./environment");
 
 // Constants
@@ -14,7 +18,9 @@ app.get("/", (req, res) => {
     `
     <h1 style='text-align: center;'>
       Hello World!
-      <h3 style='text-align: center;'>Database is hosted on ${environment.DATABASE_URL}</h3>
+      <h3 style='text-align: center;'>
+        Database is hosted on ${environment.DATABASE_URL}
+      </h3>
     </h1>
     `
   );
