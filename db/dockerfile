@@ -1,0 +1,12 @@
+FROM mongo
+
+VOLUME ["/data/db"]
+
+# Run db process
+CMD ["mongod"]
+
+# process
+EXPOSE 27017
+
+# http
+EXPOSE 28017
