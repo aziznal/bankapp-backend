@@ -2,7 +2,7 @@
   "name": "bankapp-server",
   "version": "1.0.0",
   "description": "Backend for internship bank app",
-  "main": "build/server.js",
+  "main": "build/index.js",
   "scripts": {
     "start": "ts-node-dev src",
     "build": "tsc --project ./"

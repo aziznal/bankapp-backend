@@ -9,4 +9,4 @@ EXPOSE 8080
 
 
 CMD ["npm", "run build"]
-CMD ["node", "build/server.js"]
+CMD ["node", "build/index.js"]
