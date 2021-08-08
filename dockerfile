@@ -7,4 +7,6 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["node", "server.js"]
+
+CMD ["npm", "run build"]
+CMD ["node", "build/server.js"]
