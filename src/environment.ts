@@ -1,1 +1,8 @@
-export const DATABASE_URL = "localhost:8082";
+export const DATABASE_URL = "localhost:8081";
+
+export const preflightOptions = {
+  "Access-Control-Allow-Origin": "http://localhost:4200/",
+  "Access-Control-Allow-Methods": "POST, GET, DELETE, PUT",
+  credentials: true,
+  origin: true,
+};
