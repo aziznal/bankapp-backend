@@ -8,6 +8,7 @@ import { MongoClient } from "mongodb";
 import { DATABASE_URL, preflightOptions } from "./environment";
 
 import { NewAccountHandler } from "./handlers/user/new-account/new-account.handler";
+import { LoginHandler } from "./handlers/user/login/login.handler";
 
 // Constants
 const PORT = 8080;
@@ -42,6 +43,7 @@ MongoClient.connect(DATABASE_URL).then((client: MongoClient) => {
   const db = client.db("bankapp");
 
   const newAccountHandler = new NewAccountHandler(app, db);
+  const loginHandler = new LoginHandler(app, db);
 });
 
 console.log(`\n\nListening on http://${HOST}:${PORT}`);

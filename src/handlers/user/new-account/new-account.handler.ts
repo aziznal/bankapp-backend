@@ -7,26 +7,34 @@ import { StatusCodes } from "http-status-codes";
 import { User } from "../../../models/user.model";
 
 export class NewAccountHandler {
-  /**
-   *
-   * Express Instance used to specify routes and request handling
-   * @type {express.Express}
-   */
-  app: express.Express;
+
 
   /**
    *
-   * MongoDB socket used to connect to database
+   * Express Instance used to specify routes and request handling
+   *
+   * @type {express.Express}
+   * @memberof NewAccountHandler
+   */
+  app: express.Express;
+
+  
+  /**
+   * 
+   * MongoDB client used to connect to database
+   *
    * @type {mongodb.Db}
+   * @memberof NewAccountHandler
    */
   db: mongodb.Db;
 
   /**
-   *
-   * Inits app and starts listening on relevant route
-   *
-   * @param  {express.Express} app
+   * 
+   * Creates an instance of NewAccountHandler. Starts listening on relevant route
+   * 
+   * @param {express.Express} app
    * @param {mongodb.Db} db
+   * @memberof NewAccountHandler
    */
   constructor(app: express.Express, db: mongodb.Db) {
     this.app = app;
@@ -92,6 +100,14 @@ export class NewAccountHandler {
     }
   }
 
+  /**
+   *
+   * Hashes user password and inserts user into database
+   * 
+   * @param {User} user
+   * @return {*}  {Promise<mongodb.InsertOneResult>}
+   * @memberof NewAccountHandler
+   */
   createNewUser(user: User): Promise<mongodb.InsertOneResult> {
     let hashedPassword = this.getHashedPassword(user.password);
 
@@ -100,7 +116,16 @@ export class NewAccountHandler {
       .insertOne({ ...user, password: hashedPassword });
   }
 
-  confirmValidUser(user: User) {
+
+  /**
+   *
+   * Confirms all fields of user object are populated with some value.
+   *
+   * @param {User} user
+   * @return {*}  {boolean}
+   * @memberof NewAccountHandler
+   */
+  confirmValidUser(user: User): boolean {
     Object.values(user).forEach((value) => {
       if (value === undefined || value === "") {
         return false;
@@ -110,11 +135,14 @@ export class NewAccountHandler {
     return true;
   }
 
+  
   /**
    *
    * Checks whether provided user's email is already in the database or not.
    *
-   * @returns boolean
+   * @param {string} userEmail
+   * @return {*}  {Promise<boolean>}
+   * @memberof NewAccountHandler
    */
   checkUserAlreadyExists(userEmail: string): Promise<boolean> {
     let query = this.db.collection("users").find({ email: userEmail });
