@@ -33,19 +33,15 @@ app.post("/", (req, res) => {
   });
 });
 
-console.log("Attempting to connect to mongo...")
+console.log("Attempting to connect to mongo...");
 console.log(MongoClient);
 
 app.listen(PORT, HOST);
 
-const mongoClient = MongoClient.connect(
-  DATABASE_URL,
-  (error, client) => {
+MongoClient.connect(DATABASE_URL).then((client: MongoClient) => {
+  const db = client.db("bankapp");
 
-    // const db = client!.db("bankapp");
-
-    const newAccountHandler = new NewAccountHandler(app);
-  }
-);
+  const newAccountHandler = new NewAccountHandler(app, db);
+});
 
 console.log(`\n\nListening on http://${HOST}:${PORT}`);
