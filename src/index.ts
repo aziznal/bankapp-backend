@@ -5,10 +5,15 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { MongoClient } from "mongodb";
 
-import { DATABASE_URL, preflightOptions } from "./environment";
+import {
+  DATABASE_URL,
+  DEFAULT_COOKIE_OPTIONS,
+  PREFLIGHT_OPTIONS,
+} from "./environment";
 
 import { NewAccountHandler } from "./handlers/user/new-account/new-account.handler";
 import { LoginHandler } from "./handlers/user/login/login.handler";
+import { StatusCodes } from "http-status-codes";
 
 // Constants
 const PORT = 8080;
@@ -17,13 +22,20 @@ const HOST = "0.0.0.0";
 // App
 const app = express();
 
-app.use(cors(preflightOptions));
+app.use(cors(PREFLIGHT_OPTIONS));
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
-  res.send({
-    body: "hello there :)",
-    status: 200,
+  console.log(req.cookies);
+
+  res.cookie("hello", "there", {
+    ...DEFAULT_COOKIE_OPTIONS,
+    maxAge: 10 * 1000, //seconds,
+  });
+
+  res.status(StatusCodes.OK).send({
+    body: "hello there, have a cookie :) ",
   });
 });
 

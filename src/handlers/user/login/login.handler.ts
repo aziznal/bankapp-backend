@@ -3,6 +3,8 @@ import mongodb from "mongodb";
 import bcrypt from "bcrypt";
 
 import { StatusCodes } from "http-status-codes";
+import { DEFAULT_COOKIE_OPTIONS } from "../../../environment";
+import { User } from "../../../models/user.model";
 
 export class LoginHandler {
   /**
@@ -57,6 +59,8 @@ export class LoginHandler {
     request: express.Request,
     response: express.Response
   ) {
+    console.log("\nReceived login request. Processing ... \n\n");
+
     let { email, password } = request.body;
 
     if (!email || !password) {
@@ -72,9 +76,15 @@ export class LoginHandler {
       return response.status(StatusCodes.NOT_FOUND).send({
         body: "No user with given email and password combination was found",
       });
-    }
+    } else {
+      // Set session cookie
+      response.cookie("auth", await this.getUserToken(email), {
+        ...DEFAULT_COOKIE_OPTIONS,
+        maxAge: 3600000 * 1, // 1 hour
+      });
 
-    return response.status(StatusCodes.OK).send();
+      return response.status(StatusCodes.OK).send();
+    }
   }
 
   async checkUserExists(email: string): Promise<boolean> {
@@ -120,7 +130,36 @@ export class LoginHandler {
         .collection("users")
         .findOne({ email })
         .then((results) => {
-          resolve(results!.password);
+          if (results !== undefined) {
+            resolve(results.password);
+          } else {
+            resolve("");
+          }
+        });
+    });
+  }
+
+  /**
+   * Returns a user token including the user's email
+   *
+   * @param {string} email The email of the user attempting to login
+   * @return {*}  {Promise<string>}
+   * @memberof LoginHandler
+   */
+  async getUserToken(email: string): Promise<string> {
+    return new Promise<string>((resolve, _reject) => {
+      this.db
+        .collection("users")
+        .findOne<User>({ email })
+        .then((user: User | undefined) => {
+          if (user) {
+            console.log("Found user");
+            console.log(user);
+            resolve(user.email);
+          } else {
+            console.log("No users were found with given email and password");
+            resolve("nope");
+          }
         });
     });
   }
