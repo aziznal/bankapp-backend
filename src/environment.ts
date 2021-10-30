@@ -1,6 +1,6 @@
 import { CookieOptions } from "express";
 
-export const DATABASE_URL = "mongodb://localhost:8081";
+export const DATABASE_URL = "mongodb://root:example@localhost:27017";
 
 export const PREFLIGHT_OPTIONS = {
   "Access-Control-Allow-Origin": "http://localhost:4200/",

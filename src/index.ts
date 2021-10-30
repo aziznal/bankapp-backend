@@ -51,11 +51,21 @@ console.log(MongoClient);
 
 app.listen(PORT, HOST);
 
-MongoClient.connect(DATABASE_URL).then((client: MongoClient) => {
-  const db = client.db("bankapp");
+// #TODO: app is failing if the connected db does not have a database named 'bankapp'
 
-  const newAccountHandler = new NewAccountHandler(app, db);
-  const loginHandler = new LoginHandler(app, db);
-});
+MongoClient.connect(DATABASE_URL)
+  .then((client: MongoClient) => {
+    const db = client.db("bankapp", {
+      authSource: "root:example",
+    });
 
-console.log(`\n\nListening on http://${HOST}:${PORT}`);
+    const newAccountHandler = new NewAccountHandler(app, db);
+    const loginHandler = new LoginHandler(app, db);
+
+    console.log("Successfully connected to mongodb!\n");
+    console.log(`\n\nListening on http://${HOST}:${PORT}`);
+  })
+  .catch((error) => {
+    console.log("Something went wrong");
+    console.log(error);
+  });
