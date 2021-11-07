@@ -1,1 +1,0 @@
-docker run -p 8081:27017 aziznal/bankapp-db
