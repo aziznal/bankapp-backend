@@ -17,7 +17,10 @@ export class AuthController {
    */
   @Post()
   login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
-    response.cookie('auth', 'yup'); // don't @ me. this is a work in progess
+    response.cookie('auth', 'yup', {
+      secure: true,
+      sameSite: 'none',
+    }); // don't @ me. this is a work in progess
     return this.authService.login(loginDto);
   }
 }
