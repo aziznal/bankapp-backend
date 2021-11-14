@@ -6,10 +6,14 @@ import { RegisterService } from './register.service';
 export class RegisterController {
   constructor(private registerService: RegisterService) {}
 
+  /**
+   * Registers a new user
+   *
+   * @param {NewUserDto} newUserDto
+   * @memberof RegisterController
+   */
   @Post()
-  async register(@Body() newUserDto: NewUserDto) {
-    const userData = await this.registerService.createUser(newUserDto);
-
-    return { body: 'Great success', createdUserData: userData }
+  register(@Body() newUserDto: NewUserDto) {
+    return this.registerService.create(newUserDto);
   }
 }
