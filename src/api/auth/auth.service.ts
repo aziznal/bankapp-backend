@@ -1,9 +1,11 @@
-import { BadRequestException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { SuccessResponse, TSuccessResponse } from 'src/common/success.response';
+import { User } from '../users/interfaces/user.interface';
+import { UsersService } from '../users/users.service';
 
 import { ILogin } from './interfaces/login.interface';
 
@@ -15,27 +17,16 @@ export class AuthService {
    * @param {Model<ILogin>} loginModel
    * @memberof AuthService
    */
-  constructor(@InjectModel('Login') private readonly loginModel: Model<ILogin>) {}
+  constructor(@InjectModel('Login') private readonly loginModel: Model<ILogin>, private usersService: UsersService) {}
 
-  /**
-   * Attempts to log user in
-   *
-   * @param {ILogin} loginData
-   * @return {*}  {Promise<TSuccessResponse>}
-   * @memberof AuthService
-   */
-  async login(loginData: ILogin): Promise<TSuccessResponse> {
-    const result = await this.loginModel.findOne({
-      email: loginData.email,
-      password: loginData.password,
-    });
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = this.usersService.getUserByEmail(email);
 
-    if (!result) {
-      throw new NotFoundException({
-        body: 'No user was found with the given email/password combination',
-      });
+    if (user && user.password === password) {
+      const { password, ...result } = user;
+      return result;
     }
 
-    return SuccessResponse;
+    return null;
   }
 }
