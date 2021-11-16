@@ -1,41 +1,56 @@
-import { BadRequestException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { UsersService } from '../users/users.service';
 
-import { SuccessResponse, TSuccessResponse } from 'src/common/success.response';
-
-import { ILogin } from './interfaces/login.interface';
-
+/**
+ * Auth service used to validate user login and generate encoded jwt
+ *
+ * @export
+ * @class AuthService
+ */
 @Injectable()
 export class AuthService {
   /**
    * Creates an instance of AuthService.
    *
-   * @param {Model<ILogin>} loginModel
+   * @param {UsersService} usersService
+   * @param {JwtService} jwtService
    * @memberof AuthService
    */
-  constructor(@InjectModel('Login') private readonly loginModel: Model<ILogin>) {}
+  constructor(private usersService: UsersService, private jwtService: JwtService) {}
 
   /**
-   * Attempts to log user in
+   * Validates user using their email and password
    *
-   * @param {ILogin} loginData
-   * @return {*}  {Promise<TSuccessResponse>}
+   * @param {string} email
+   * @param {string} password
+   * @return {*}  {Promise<any>}
    * @memberof AuthService
    */
-  async login(loginData: ILogin): Promise<TSuccessResponse> {
-    const result = await this.loginModel.findOne({
-      email: loginData.email,
-      password: loginData.password,
-    });
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.usersService.getUserByEmail(email);
 
-    if (!result) {
-      throw new NotFoundException({
-        body: 'No user was found with the given email/password combination',
-      });
+    if (user && user.password === password) {
+      const { password, ...result } = user;
+      return result;
     }
 
-    return SuccessResponse;
+    return null;
+  }
+
+  /**
+   * Logs user in by returning a jwt
+   *
+   * @param {*} user
+   * @return {*}  {Promise<{ access_token: string }>}
+   * @memberof AuthService
+   */
+  async login(user: any): Promise<{ access_token: string }> {
+    const payload = { email: user.email, sub: user.id };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }
