@@ -13,9 +13,8 @@ import { LoginSchema } from './schemas/login.schema';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 
-import { jwtConstants } from './constants';
-
 import { AuthController } from './auth.controller';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 /**
  * Auth module for handling user authentication and verification
@@ -28,9 +27,13 @@ import { AuthController } from './auth.controller';
     UsersModule,
     PassportModule,
     MongooseModule.forFeature([{ name: 'Login', schema: LoginSchema }]),
-    JwtModule.register({
-      secret: jwtConstants.secret,
-      signOptions: { expiresIn: jwtConstants.expiresIn },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET_KEY'),
+        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') },
+      }),
     }),
   ],
   controllers: [AuthController],
