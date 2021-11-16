@@ -1,29 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-
 import { UsersService } from '../users/users.service';
 
-import { ILogin } from './interfaces/login.interface';
-
+/**
+ * Auth service used to validate user login and generate encoded jwt
+ *
+ * @export
+ * @class AuthService
+ */
 @Injectable()
 export class AuthService {
   /**
    * Creates an instance of AuthService.
    *
-   * @param {Model<ILogin>} loginModel
+   * @param {UsersService} usersService
+   * @param {JwtService} jwtService
    * @memberof AuthService
    */
-  constructor(
-    @InjectModel('Login') private readonly loginModel: Model<ILogin>,
-    private usersService: UsersService,
-    private jwtService: JwtService,
-  ) {}
+  constructor(private usersService: UsersService, private jwtService: JwtService) {}
 
+  /**
+   * Validates user using their email and password
+   *
+   * @param {string} email
+   * @param {string} password
+   * @return {*}  {Promise<any>}
+   * @memberof AuthService
+   */
   async validateUser(email: string, password: string): Promise<any> {
-    const user = this.usersService.getUserByEmail(email);
+    const user = await this.usersService.getUserByEmail(email);
 
     if (user && user.password === password) {
       const { password, ...result } = user;
@@ -33,7 +39,14 @@ export class AuthService {
     return null;
   }
 
-  async login(user: any) {
+  /**
+   * Logs user in by returning a jwt
+   *
+   * @param {*} user
+   * @return {*}  {Promise<{ access_token: string }>}
+   * @memberof AuthService
+   */
+  async login(user: any): Promise<{ access_token: string }> {
     const payload = { email: user.email, sub: user.id };
 
     return {
