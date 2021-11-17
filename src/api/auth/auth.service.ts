@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { UsersService } from '../users/users.service';
+import { User } from './interfaces/user.interface';
 
 /**
  * Auth service used to validate user login and generate encoded jwt
@@ -46,8 +47,10 @@ export class AuthService {
    * @return {*}  {Promise<{ access_token: string }>}
    * @memberof AuthService
    */
-  async login(user: any): Promise<{ access_token: string }> {
-    const payload = { email: user.email, sub: user.id };
+  async login(user: User): Promise<{ access_token: string }> {
+    console.log('auth service:');
+    console.log(user);
+    const payload = { email: user.email, sub: user._id, fullname: user.fullname };
 
     return {
       access_token: this.jwtService.sign(payload),
