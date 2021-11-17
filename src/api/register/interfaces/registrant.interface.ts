@@ -1,5 +1,5 @@
 export interface Registrant {
-  name: string;
+  fullname: string;
   email: string;
   password: string;
   birthdate?: Date;
