@@ -61,8 +61,6 @@ export class AuthService {
    * @memberof AuthService
    */
   async login(user: User): Promise<{ access_token: string }> {
-    console.log('auth service:');
-    console.log(user);
     const payload = { email: user.email, sub: user._id, fullname: user.fullname };
 
     return {
