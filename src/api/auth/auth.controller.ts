@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 
@@ -6,7 +6,9 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
 import { SuccessResponse, TSuccessResponse } from 'src/common/success.response';
-import { DecodedJwt } from './interfaces/decoded-jwt.interface';
+
+import { NewUserDto } from './dto/new-user-dto';
+import { User } from './interfaces/user.interface';
 
 /**
  * Main Authentication and Verification requests controller
@@ -28,7 +30,7 @@ export class AuthController {
    */
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  login(@Request() req: { user: DecodedJwt }) {
+  login(@Request() req: { user: User }) {
     return this.authService.login(req.user);
   }
 
@@ -43,5 +45,16 @@ export class AuthController {
   verify(): TSuccessResponse {
     // TODO: make this method extend the token expiry date.
     return SuccessResponse;
+  }
+
+  /**
+   * Registers a new user
+   *
+   * @param {NewUserDto} newUserDto
+   * @memberof AuthController
+   */
+  @Post('register')
+  register(@Body() newUserDto: NewUserDto): Promise<TSuccessResponse> {
+    return this.authService.create(newUserDto);
   }
 }
