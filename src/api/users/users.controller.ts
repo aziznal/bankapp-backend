@@ -84,6 +84,14 @@ export class UsersController {
     }
   }
 
+  /**
+   * Handles creation of a new banking account
+   *
+   * @param {AuthenticatedRequest} req
+   * @param {NewBankingAccountDto} newBankingAccountDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersController
+   */
   @Post('create-account')
   createBankingAccount(
     @Request() req: AuthenticatedRequest,
@@ -92,6 +100,14 @@ export class UsersController {
     return this.usersService.createNewBankingAccount(req.user.email, newBankingAccountDto);
   }
 
+  /**
+   * Handles updating an existing banking account
+   *
+   * @param {AuthenticatedRequest} req
+   * @param {EditBankingAccountDto} editBankingAccountDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersController
+   */
   @Put('update-account')
   editBankingAccount(
     @Request() req: AuthenticatedRequest,
@@ -100,6 +116,14 @@ export class UsersController {
     return this.usersService.updateBankingAccount(req.user.email, editBankingAccountDto);
   }
 
+  /**
+   * Deletes an existing banking account
+   *
+   * @param {AuthenticatedRequest} req
+   * @param {DeleteBankingAccountDto} deleteBankingAccountDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersController
+   */
   @Delete('delete-account')
   deleteBankingAccount(
     @Request() req: AuthenticatedRequest,

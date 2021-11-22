@@ -9,5 +9,11 @@ export class DeleteBankingAccountDto {
    */
   @IsNotEmpty()
   @IsString()
-  label: string;
+  deleteLabel: string;
+
+  /** label for the account which will receive the funds in the account
+   * which is being deleted */
+  @IsNotEmpty()
+  @IsString()
+  transferToLabel: string;
 }

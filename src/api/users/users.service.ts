@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -261,12 +262,43 @@ export class UsersService {
     const user = await this.getUserByEmail(email);
 
     // Check user has account to be deleted
-    if (!user.accounts.some((account) => account.label === deleteBankingAccountDto.label)) {
-      throw new NotFoundException('No account with the given label exists for given user');
+    if (!user.accounts.some((account) => account.label === deleteBankingAccountDto.deleteLabel)) {
+      throw new NotFoundException(
+        'Cannot delete account with given label because no such account exists.',
+      );
     }
 
+    // Check that the transferTo account exists and that it's not the same as the deletedAccount
+    if (
+      !user.accounts.some((account) => account.label === deleteBankingAccountDto.transferToLabel)
+    ) {
+      throw new NotFoundException(
+        'Could not find a bank account with the label "' +
+          deleteBankingAccountDto.transferToLabel +
+          '" to transfer your funds to.',
+      );
+    }
+
+    // Check that transferTo and deleted accounts are not the same
+    if (deleteBankingAccountDto.deleteLabel === deleteBankingAccountDto.transferToLabel) {
+      throw new BadRequestException(
+        'the labels for "transferTo" and "deleted" cannot be the same.',
+      );
+    }
+
+    // Get funds of account to-be-deleted
+    const deletedAccountFunds = user.accounts.find(
+      (account) => account.label === deleteBankingAccountDto.deleteLabel,
+    ).balance;
+
+    // add them to given transferTo account
+    user.accounts.find(
+      (account) => account.label === deleteBankingAccountDto.transferToLabel,
+    ).balance += deletedAccountFunds;
+
+    // Remove deleted account
     user.accounts = user.accounts.filter(
-      (account) => account.label !== deleteBankingAccountDto.label,
+      (account) => account.label !== deleteBankingAccountDto.deleteLabel,
     );
 
     const result = await this.userModel.updateOne(
