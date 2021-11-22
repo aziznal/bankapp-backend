@@ -1,4 +1,14 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Put,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -8,6 +18,14 @@ import { SimplifiedTransaction } from './interfaces/simplified-transaction.inter
 import { Transaction } from './interfaces/transaction';
 import { User } from './interfaces/user.interface';
 import { BankingAccount } from './interfaces/banking-account.interface';
+import { NewBankingAccountDto } from './dto/new-banking-account-dto';
+import { EditBankingAccountDto } from './dto/edit-banking-account-dto';
+import { TSuccessResponse } from 'src/common/success.response';
+import { DeleteBankingAccountDto } from './dto/delete-banking-account-dto';
+
+interface AuthenticatedRequest {
+  user: User;
+}
 
 /**
  * Controller for handling user-data related requests
@@ -28,7 +46,7 @@ export class UsersController {
    * @memberof UsersController
    */
   @Get()
-  async getUserData(@Request() req: { user: User }): Promise<User | any> {
+  async getUserData(@Request() req: AuthenticatedRequest): Promise<User | any> {
     const { password, ...user } = await this.usersService.getUserByEmail(req.user.email);
     return user;
   }
@@ -41,7 +59,7 @@ export class UsersController {
    * @memberof UsersController
    */
   @Get('accounts')
-  getAccounts(@Request() req: { user: User }): Promise<BankingAccount[]> {
+  getAccounts(@Request() req: AuthenticatedRequest): Promise<BankingAccount[]> {
     return this.usersService.getAccounts(req.user.email);
   }
 
@@ -56,7 +74,7 @@ export class UsersController {
    */
   @Get('transactions')
   getTransactions(
-    @Request() req: { user: User },
+    @Request() req: AuthenticatedRequest,
     @Query() query: { forChart: 'true' | 'false' },
   ): Promise<Transaction[] | SimplifiedTransaction[]> {
     if (query.forChart && query.forChart === 'true') {
@@ -64,5 +82,29 @@ export class UsersController {
     } else {
       return this.usersService.getTransactions(req.user.email);
     }
+  }
+
+  @Post('create-account')
+  createBankingAccount(
+    @Request() req: AuthenticatedRequest,
+    @Body() newBankingAccountDto: NewBankingAccountDto,
+  ): Promise<TSuccessResponse> {
+    return this.usersService.createNewBankingAccount(req.user.email, newBankingAccountDto);
+  }
+
+  @Put('update-account')
+  editBankingAccount(
+    @Request() req: AuthenticatedRequest,
+    @Body() editBankingAccountDto: EditBankingAccountDto,
+  ): Promise<TSuccessResponse> {
+    return this.usersService.updateBankingAccount(req.user.email, editBankingAccountDto);
+  }
+
+  @Delete('delete-account')
+  deleteBankingAccount(
+    @Request() req: AuthenticatedRequest,
+    @Body() deleteBankingAccountDto: DeleteBankingAccountDto,
+  ): Promise<TSuccessResponse> {
+    return this.usersService.deleteBankingAccount(req.user.email, deleteBankingAccountDto);
   }
 }

@@ -12,8 +12,7 @@ export const UserSchema = new Schema(
     accounts: {
       type: [
         {
-          label: String,
-          currency: String,
+          label: { type: String, unique: true },
           balance: Number,
 
           transactions: {
@@ -24,7 +23,6 @@ export const UserSchema = new Schema(
                 date: Date,
                 otherPerson: {
                   type: {
-                    _id: String,
                     fullname: String,
                     email: String,
                     accountId: String,

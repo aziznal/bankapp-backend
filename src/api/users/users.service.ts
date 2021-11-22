@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Transaction } from './interfaces/transaction';
@@ -9,6 +14,10 @@ import { Utils } from 'src/common/utils';
 import { OtherPerson } from './interfaces/other-person.interface';
 import { SimplifiedTransaction } from './interfaces/simplified-transaction.interface';
 import { BankingAccount } from './interfaces/banking-account.interface';
+import { NewBankingAccountDto } from './dto/new-banking-account-dto';
+import { SuccessResponse, TSuccessResponse } from 'src/common/success.response';
+import { EditBankingAccountDto } from './dto/edit-banking-account-dto';
+import { DeleteBankingAccountDto } from './dto/delete-banking-account-dto';
 
 @Injectable()
 export class UsersService {
@@ -108,6 +117,10 @@ export class UsersService {
   async getTransactionsForChart(email: string): Promise<SimplifiedTransaction[]> {
     const flatTransactions = await this.getTransactions(email);
 
+    if (flatTransactions.length < 1) {
+      return [];
+    }
+
     // Group transactions that happened on the same day
     const groupedTransactions = _.groupBy(flatTransactions, (transaction) =>
       transaction.date.valueOf(),
@@ -144,5 +157,129 @@ export class UsersService {
     return finalTransactions.length > 14
       ? finalTransactions.slice(finalTransactions.length - 14)
       : finalTransactions;
+  }
+
+  /**
+   * Creates a new banking account for the user
+   *
+   * @param {string} email
+   * @param {NewBankingAccountDto} newBankingAccountDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersService
+   */
+  async createNewBankingAccount(
+    email: string,
+    newBankingAccountDto: NewBankingAccountDto,
+  ): Promise<TSuccessResponse> {
+    const user = await this.getUserByEmail(email);
+
+    // Make sure the provided label in the dto does not already exists
+    if (user.accounts.some((account) => account.label === newBankingAccountDto.label)) {
+      throw new ConflictException('The provided label is already in use by another account');
+    }
+
+    const newBankingAccount: BankingAccount = {
+      balance: 0,
+      label: newBankingAccountDto.label,
+      transactions: [] as Transaction[],
+    };
+
+    let result = await this.userModel.updateOne(
+      { email: email },
+      {
+        accounts: [...user.accounts, newBankingAccount],
+      },
+    );
+
+    if (result.modifiedCount < 1) {
+      throw new InternalServerErrorException('Server side exception occured.');
+    }
+
+    return SuccessResponse;
+  }
+
+  /**
+   * Allows user to change the label of an account
+   *
+   * @param {string} email
+   * @param {EditBankingAccountDto} editBankingAccountDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersService
+   */
+  async updateBankingAccount(
+    email: string,
+    editBankingAccountDto: EditBankingAccountDto,
+  ): Promise<TSuccessResponse> {
+    const user = await this.getUserByEmail(email);
+
+    // Confirm that an account with the old label already exists
+    if (!user.accounts.some((account) => account.label === editBankingAccountDto.oldLabel)) {
+      throw new NotFoundException(
+        `No accounts were found with the label '${editBankingAccountDto.oldLabel}'`,
+      );
+    }
+
+    // Confirm that given new label is not already in use
+    if (user.accounts.some((account) => account.label === editBankingAccountDto.newLabel)) {
+      throw new ConflictException(
+        `An account already exists with the label '${editBankingAccountDto.newLabel}'`,
+      );
+    }
+
+    // update old label to new label
+    user.accounts.find((account) => account.label === editBankingAccountDto.oldLabel).label =
+      editBankingAccountDto.newLabel;
+
+    const result = await this.userModel.updateOne(
+      { email: email },
+      {
+        accounts: user.accounts,
+      },
+    );
+
+    if (result.modifiedCount < 1) {
+      throw new InternalServerErrorException(
+        'Server-side exception occured. could not update banking account details',
+      );
+    }
+
+    return SuccessResponse;
+  }
+
+  /**
+   * Deletes account based on given label
+   *
+   * @param {string} email
+   * @param {DeleteBankingAccountDto} deleteBankingAccountDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersService
+   */
+  async deleteBankingAccount(
+    email: string,
+    deleteBankingAccountDto: DeleteBankingAccountDto,
+  ): Promise<TSuccessResponse> {
+    const user = await this.getUserByEmail(email);
+
+    // Check user has account to be deleted
+    if (!user.accounts.some((account) => account.label === deleteBankingAccountDto.label)) {
+      throw new NotFoundException('No account with the given label exists for given user');
+    }
+
+    user.accounts = user.accounts.filter(
+      (account) => account.label !== deleteBankingAccountDto.label,
+    );
+
+    const result = await this.userModel.updateOne(
+      { email: email },
+      {
+        accounts: user.accounts,
+      },
+    );
+
+    if (result.modifiedCount < 1) {
+      throw new InternalServerErrorException('Server-side error. Could not delete account');
+    }
+
+    return SuccessResponse;
   }
 }
