@@ -53,6 +53,14 @@ export class UsersService {
     return transactionArrays.flat();
   }
 
+  /**
+   * Sums the given array of transactions taking each transaction's action into account
+   *
+   * @private
+   * @param {Transaction[]} transactions
+   * @return {*}  {Transaction}
+   * @memberof UsersService
+   */
   private sumTransactions(transactions: Transaction[]): Transaction {
     // REFACTOR
 
@@ -361,6 +369,14 @@ export class UsersService {
     return SuccessResponse;
   }
 
+  /**
+   * Handles sending money between two banking accounts
+   *
+   * @param {string} email
+   * @param {SendMoneyDto} sendMoneyDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersService
+   */
   async sendMoney(email: string, sendMoneyDto: SendMoneyDto): Promise<TSuccessResponse> {
     const user = await this.getUserByEmail(email);
     const sendingAccount = user.accounts.find(

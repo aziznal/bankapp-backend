@@ -133,6 +133,14 @@ export class UsersController {
     return this.usersService.deleteBankingAccount(req.user.email, deleteBankingAccountDto);
   }
 
+  /**
+   * Handles money transfers between two banking accounts
+   *
+   * @param {AuthenticatedRequest} req
+   * @param {SendMoneyDto} sendMoneyDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersController
+   */
   @Post('send-money')
   sendMoney(
     @Request() req: AuthenticatedRequest,
