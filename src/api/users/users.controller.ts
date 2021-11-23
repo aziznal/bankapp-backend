@@ -23,6 +23,7 @@ import { EditBankingAccountDto } from './dto/edit-banking-account-dto';
 import { TSuccessResponse } from 'src/common/success.response';
 import { DeleteBankingAccountDto } from './dto/delete-banking-account-dto';
 import { SendMoneyDto } from './dto/send-money-dto';
+import { BorrowMoneyDto } from './dto/borrow-money-dto';
 
 interface AuthenticatedRequest {
   user: User;
@@ -147,5 +148,21 @@ export class UsersController {
     @Body() sendMoneyDto: SendMoneyDto,
   ): Promise<TSuccessResponse> {
     return this.usersService.sendMoney(req.user.email, sendMoneyDto);
+  }
+
+  /**
+   * Hanldes money borrowing requests
+   *
+   * @param {AuthenticatedRequest} req
+   * @param {BorrowMoneyDto} borrowMoneyDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersController
+   */
+  @Post('borrow-money')
+  borrowMoney(
+    @Request() req: AuthenticatedRequest,
+    @Body() borrowMoneyDto: BorrowMoneyDto,
+  ): Promise<TSuccessResponse> {
+    return this.usersService.borrowMoney(req.user.email, borrowMoneyDto);
   }
 }
