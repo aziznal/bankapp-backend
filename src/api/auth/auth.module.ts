@@ -15,6 +15,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 
 import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RegisterSchema } from './schemas/register.schema';
 
 /**
  * Auth module for handling user authentication and verification
@@ -26,7 +27,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   imports: [
     UsersModule,
     PassportModule,
-    MongooseModule.forFeature([{ name: 'Login', schema: LoginSchema }]),
+    MongooseModule.forFeature([
+      { name: 'Login', schema: LoginSchema },
+      { name: 'Register', schema: RegisterSchema },
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
