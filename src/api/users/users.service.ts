@@ -19,13 +19,20 @@ import { NewBankingAccountDto } from './dto/new-banking-account-dto';
 import { SuccessResponse, TSuccessResponse } from 'src/common/success.response';
 import { EditBankingAccountDto } from './dto/edit-banking-account-dto';
 import { DeleteBankingAccountDto } from './dto/delete-banking-account-dto';
+import { SendMoneyDto } from './dto/send-money-dto';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel('User') private userModel: Model<User>) {}
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return (await this.userModel.findOne({ email: email })).toObject();
+    const user = await this.userModel.findOne({ email: email });
+
+    if (user) {
+      return user.toObject();
+    } else {
+      throw new NotFoundException('No user with the given information has been found');
+    }
   }
 
   async getAccounts(email: string): Promise<BankingAccount[]> {
@@ -46,6 +53,54 @@ export class UsersService {
     return transactionArrays.flat();
   }
 
+  private sumTransactions(transactions: Transaction[]): Transaction {
+    // REFACTOR
+
+    // Only one transaction
+    if (transactions.length === 1) {
+      transactions[0].amount =
+        transactions[0].action === 'SENT' ? -transactions[0].amount : transactions[0].amount;
+
+      return transactions[0];
+    }
+
+    // Exactly two transactions
+    else if (transactions.length === 2) {
+      const [firstTransaction, secondTransaction] = transactions;
+
+      const summedUpTransaction = {
+        ...secondTransaction,
+        amount:
+          (firstTransaction.action === 'SENT'
+            ? -firstTransaction.amount
+            : firstTransaction.amount) +
+          (secondTransaction.action === 'SENT'
+            ? -secondTransaction.amount
+            : secondTransaction.amount),
+      };
+
+      return summedUpTransaction;
+    }
+
+    // 3+ transactions
+    else {
+      const firstTransaction = transactions[0];
+      const shiftedTransactions = transactions.slice(1);
+
+      const summedTransaction = shiftedTransactions.reduce((prev, current) => {
+        return {
+          ...current,
+          amount: prev.amount + (current.action === 'SENT' ? -current.amount : current.amount),
+        };
+      });
+
+      summedTransaction.amount +=
+        firstTransaction.action === 'SENT' ? -firstTransaction.amount : firstTransaction.amount;
+
+      return summedTransaction;
+    }
+  }
+
   /**
    * Returns a sorted array of transactions where transactions in the same date
    * are added together.
@@ -60,15 +115,7 @@ export class UsersService {
     let summedTransactions = [] as Transaction[];
 
     Object.keys(groupedTransactions).forEach((groupKey) => {
-      summedTransactions.push(
-        groupedTransactions[groupKey].reduce((prev, current) => {
-          // REFACTOR: make a method to add two transactions
-          return {
-            ...prev,
-            amount: prev.amount + (current.action === 'SENT' ? -current.amount : current.amount),
-          };
-        }),
-      );
+      summedTransactions.push(this.sumTransactions(groupedTransactions[groupKey]));
     });
 
     // Sort transactions by date
@@ -124,7 +171,7 @@ export class UsersService {
 
     // Group transactions that happened on the same day
     const groupedTransactions = _.groupBy(flatTransactions, (transaction) =>
-      transaction.date.valueOf(),
+      Utils.getYearMonthDate(transaction.date),
     );
 
     // Add transactions in each group together
@@ -135,7 +182,6 @@ export class UsersService {
 
     missingDates.forEach((date) => {
       summedTransactions.push({
-        _id: Math.random().toString(),
         action: 'GOT',
         amount: 0,
         date: date,
@@ -146,7 +192,7 @@ export class UsersService {
     // Sort and Simplify data format
     const finalTransactions = summedTransactions.map((transaction) => {
       return {
-        amount: transaction.action === 'SENT' ? -transaction.amount : transaction.amount,
+        amount: transaction.amount,
         date: transaction.date,
       };
     });
@@ -311,6 +357,95 @@ export class UsersService {
     if (result.modifiedCount < 1) {
       throw new InternalServerErrorException('Server-side error. Could not delete account');
     }
+
+    return SuccessResponse;
+  }
+
+  async sendMoney(email: string, sendMoneyDto: SendMoneyDto): Promise<TSuccessResponse> {
+    const user = await this.getUserByEmail(email);
+    const sendingAccount = user.accounts.find(
+      (account) => account.label === sendMoneyDto.sendingAccountLabel,
+    );
+
+    const receivingUser = await this.getUserByEmail(sendMoneyDto.receiverEmail);
+    const receivingAccount = receivingUser.accounts.find(
+      (account) => account.label === sendMoneyDto.receivingAccountLabel,
+    );
+
+    // confirm user has the sending account
+    if (!sendingAccount) {
+      throw new NotFoundException('Could not find account to send money from.');
+    }
+
+    // confirm receiver has the receiving account
+    if (!receivingAccount) {
+      throw new NotFoundException('Could not find account to send money to.');
+    }
+
+    // confirm user has enough balance in that account
+    if (sendingAccount.balance - sendMoneyDto.amount < 0) {
+      throw new BadRequestException(
+        "You don't have enough balance in your account to perform this operation",
+      );
+    }
+
+    // Subtract from sender's account
+    sendingAccount.balance -= sendMoneyDto.amount;
+
+    // Add to receiver's account
+    receivingAccount.balance += sendMoneyDto.amount;
+
+    // Add these events as transactions to the each user's relevant transactions
+    sendingAccount.transactions.push({
+      action: 'SENT',
+      amount: sendMoneyDto.amount,
+      date: new Date(Date.now()),
+      otherPerson: {
+        _id: receivingUser._id,
+        fullname: receivingUser.fullname,
+        email: receivingUser.email,
+        accountLabel: receivingAccount.label,
+      },
+    });
+
+    receivingAccount.transactions.push({
+      action: 'GOT',
+      amount: sendMoneyDto.amount,
+      date: new Date(Date.now()),
+      otherPerson: {
+        _id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        accountLabel: sendingAccount.label,
+      },
+    });
+
+    // Start a transaction
+    const session = await this.userModel.startSession();
+
+    await session.withTransaction(async (_clientSession) => {
+      await this.userModel
+        .updateOne(
+          { email: email },
+          {
+            accounts: user.accounts,
+          },
+        )
+        .session(session);
+
+      await this.userModel
+        .updateOne(
+          {
+            email: receivingUser.email,
+          },
+          {
+            accounts: receivingUser.accounts,
+          },
+        )
+        .session(session);
+    });
+
+    session.endSession();
 
     return SuccessResponse;
   }

@@ -12,7 +12,7 @@ export const UserSchema = new Schema(
     accounts: {
       type: [
         {
-          label: { type: String, unique: true },
+          label: String,
           balance: Number,
 
           transactions: {

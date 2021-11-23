@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 
@@ -31,7 +36,13 @@ export class AuthService {
   ) {}
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return (await this.loginModel.findOne({ email: email })).toObject();
+    const user = await this.loginModel.findOne({ email: email });
+
+    if (user) {
+      return user.toObject();
+    } else {
+      throw new NotFoundException('No user with the given information has been found');
+    }
   }
 
   /**
