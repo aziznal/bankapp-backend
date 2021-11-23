@@ -20,6 +20,7 @@ import { SuccessResponse, TSuccessResponse } from 'src/common/success.response';
 import { EditBankingAccountDto } from './dto/edit-banking-account-dto';
 import { DeleteBankingAccountDto } from './dto/delete-banking-account-dto';
 import { SendMoneyDto } from './dto/send-money-dto';
+import { BorrowMoneyDto } from './dto/borrow-money-dto';
 
 @Injectable()
 export class UsersService {
@@ -462,6 +463,65 @@ export class UsersService {
     });
 
     session.endSession();
+
+    return SuccessResponse;
+  }
+
+  /**
+   * Increases user's debt and adds money to their borrowing account
+   *
+   * @param {string} email
+   * @param {BorrowMoneyDto} borrowMoneyDto
+   * @return {*}  {Promise<TSuccessResponse>}
+   * @memberof UsersService
+   */
+  async borrowMoney(email: string, borrowMoneyDto: BorrowMoneyDto): Promise<TSuccessResponse> {
+    const user = await this.getUserByEmail(email);
+
+    // confirm user borrowing account
+    if (!user.accounts.some((account) => account.label === borrowMoneyDto.borrowingAccountLabel)) {
+      throw new NotFoundException(
+        'No accounts were found with the label ' + borrowMoneyDto.borrowingAccountLabel,
+      );
+    }
+
+    // confirm amount is more than zero
+    if (borrowMoneyDto.amount <= 0) {
+      throw new BadRequestException('Amount must be more than 0');
+    }
+
+    // add money to borrowing account
+    user.accounts.find(
+      (account) => account.label === borrowMoneyDto.borrowingAccountLabel,
+    ).balance += borrowMoneyDto.amount;
+
+    // add debt to user
+    user.debt += borrowMoneyDto.amount;
+
+    // push new transaction to borrowing account
+    user.accounts
+      .find((account) => account.label === borrowMoneyDto.borrowingAccountLabel)
+      .transactions.push({
+        action: 'GOT',
+        amount: borrowMoneyDto.amount,
+        date: new Date(Date.now()),
+        otherPerson: { fullname: 'The Bank', email: 'debt@bank.com' } as OtherPerson,
+      });
+
+    // start new session and commit transaction
+    const session = await this.userModel.startSession();
+
+    await session.withTransaction(async () => {
+      await this.userModel.updateOne(
+        { email: email },
+        {
+          debt: user.debt,
+          accounts: user.accounts,
+        },
+      );
+    });
+
+    await session.endSession();
 
     return SuccessResponse;
   }
