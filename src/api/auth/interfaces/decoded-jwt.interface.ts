@@ -1,5 +1,5 @@
 export interface DecodedJwt {
-  _id: string;
+  sub: string;
   email: string;
   fullname: string;
 }
