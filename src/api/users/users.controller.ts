@@ -24,6 +24,7 @@ import { TSuccessResponse } from 'src/common/success.response';
 import { DeleteBankingAccountDto } from './dto/delete-banking-account-dto';
 import { SendMoneyDto } from './dto/send-money-dto';
 import { BorrowMoneyDto } from './dto/borrow-money-dto';
+import { UpdateUserDto } from './dto/update-user-dto';
 
 interface AuthenticatedRequest {
   user: User;
@@ -51,6 +52,14 @@ export class UsersController {
   async getUserData(@Request() req: AuthenticatedRequest): Promise<User | any> {
     const { password, ...user } = await this.usersService.getUserByEmail(req.user.email);
     return user;
+  }
+
+  @Post('update-user')
+  async updateUserData(
+    @Request() req: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<TSuccessResponse> {
+    return this.usersService.updateUser(req.user.email, updateUserDto);
   }
 
   /**

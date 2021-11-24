@@ -10,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { SuccessResponse, TSuccessResponse } from 'src/common/success.response';
+import { DecodedJwt } from './interfaces/decoded-jwt.interface';
 
 import { Registrant } from './interfaces/registrant.interface';
 import { User } from './interfaces/user.interface';
@@ -62,6 +63,14 @@ export class AuthService {
     }
 
     return null;
+  }
+
+  async validateJwt(email: string, jwt: DecodedJwt): Promise<boolean> {
+    const user = await this.getUserByEmail(email);
+
+    return (
+      user.email === jwt.email && user.fullname === jwt.fullname && user._id.toString() === jwt.sub
+    );
   }
 
   /**
