@@ -21,6 +21,7 @@ import { EditBankingAccountDto } from './dto/edit-banking-account-dto';
 import { DeleteBankingAccountDto } from './dto/delete-banking-account-dto';
 import { SendMoneyDto } from './dto/send-money-dto';
 import { BorrowMoneyDto } from './dto/borrow-money-dto';
+import { UpdateUserDto } from './dto/update-user-dto';
 
 @Injectable()
 export class UsersService {
@@ -39,6 +40,21 @@ export class UsersService {
   async getAccounts(email: string): Promise<BankingAccount[]> {
     const user = await this.getUserByEmail(email);
     return user.accounts;
+  }
+
+  async updateUser(email: string, updateUserDto: UpdateUserDto): Promise<TSuccessResponse> {
+    const result = await this.userModel.updateOne(
+      { email: email },
+      {
+        ...updateUserDto,
+      },
+    );
+
+    if (result.modifiedCount === 0) {
+      throw new InternalServerErrorException('Something went wrong');
+    }
+
+    return SuccessResponse;
   }
 
   /**

@@ -6,7 +6,7 @@ export interface User {
   email: string;
   password: string;
   debt?: number;
-  birthdate?: string;
+  birthdate?: Date;
   phoneNumber?: string;
 
   accounts: BankingAccount[];
