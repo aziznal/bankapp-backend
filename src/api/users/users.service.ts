@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -417,8 +418,20 @@ export class UsersService {
 
     // confirm user has enough balance in that account
     if (sendingAccount.balance - sendMoneyDto.amount < 0) {
-      throw new BadRequestException(
+      throw new ForbiddenException(
         "You don't have enough balance in your account to perform this operation",
+      );
+    }
+
+    // confirm user isn't sending money to the same account
+    if (user.email === receivingUser.email && sendingAccount.label === receivingAccount.label) {
+      throw new ForbiddenException('You cannot take from and send money to the same account');
+    }
+
+    // TEMP until I fix this bug
+    if (user.email === receivingUser.email) {
+      throw new ForbiddenException(
+        'You may not transfer money between your own accounts until the busy dev has found time to implement this feature without any bugs :p',
       );
     }
 
@@ -457,25 +470,32 @@ export class UsersService {
     const session = await this.userModel.startSession();
 
     await session.withTransaction(async (_clientSession) => {
-      await this.userModel
-        .updateOne(
-          { email: email },
-          {
-            accounts: user.accounts,
-          },
-        )
-        .session(session);
+      // If this is a transfer between the same user's accounts:
+      if (user.email === receivingUser.email) {
+        throw new ForbiddenException(
+          'You may not transfer money between your own accounts until the busy dev has found time to implement this feature without any bugs :p',
+        );
+      } else {
+        await this.userModel
+          .updateOne(
+            { email: email },
+            {
+              accounts: user.accounts,
+            },
+          )
+          .session(session);
 
-      await this.userModel
-        .updateOne(
-          {
-            email: receivingUser.email,
-          },
-          {
-            accounts: receivingUser.accounts,
-          },
-        )
-        .session(session);
+        await this.userModel
+          .updateOne(
+            {
+              email: receivingUser.email,
+            },
+            {
+              accounts: receivingUser.accounts,
+            },
+          )
+          .session(session);
+      }
     });
 
     session.endSession();
