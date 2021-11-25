@@ -532,6 +532,10 @@ export class UsersService {
     ).balance += borrowMoneyDto.amount;
 
     // add debt to user
+    if (isNaN(user.debt)) {
+      user.debt = 0;
+    }
+    
     user.debt += borrowMoneyDto.amount;
 
     // push new transaction to borrowing account

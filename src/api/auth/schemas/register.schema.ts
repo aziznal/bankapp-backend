@@ -7,6 +7,7 @@ export const RegisterSchema = new Schema(
     password: String,
     birthdate: Date,
     phoneNumber: String,
+    debt: Number,
   },
   {
     collection: 'users',
